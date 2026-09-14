@@ -3,14 +3,24 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 exports.handler = async function (event) {
   const file = event.queryStringParameters && event.queryStringParameters.file;
+
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 204, headers: corsHeaders, body: '' };
+  }
+
   if (!file) {
-    return { statusCode: 400, body: 'Missing "file" query parameter' };
+    return { statusCode: 400, headers: corsHeaders, body: 'Missing "file" query parameter' };
   }
 
   const { B2_KEY_ID, B2_APPLICATION_KEY, B2_BUCKET_NAME, B2_ENDPOINT, B2_REGION } = process.env;
   if (!B2_KEY_ID || !B2_APPLICATION_KEY || !B2_BUCKET_NAME || !B2_ENDPOINT || !B2_REGION) {
     console.error('Missing B2 environment variables');
-    return { statusCode: 500, body: 'Server misconfigured (B2 env vars missing)' };
+    return { statusCode: 500, headers: corsHeaders, body: 'Server misconfigured (B2 env vars missing)' };
   }
 
   try {
@@ -34,6 +44,7 @@ exports.handler = async function (event) {
     return {
       statusCode: 302,
       headers: {
+        ...corsHeaders,
         Location: signedUrl,
         'Cache-Control': 'no-store',
       },
@@ -41,6 +52,6 @@ exports.handler = async function (event) {
     };
   } catch (err) {
     console.error('B2 signed URL generation failed', err);
-    return { statusCode: 404, body: 'File not found or B2 error' };
+    return { statusCode: 404, headers: corsHeaders, body: 'File not found or B2 error' };
   }
 };
