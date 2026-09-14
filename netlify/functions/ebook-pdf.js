@@ -7,6 +7,7 @@ exports.handler = async function (event) {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': '*',
   };
 
   if (event.httpMethod === 'OPTIONS') {
@@ -37,6 +38,8 @@ exports.handler = async function (event) {
     const command = new GetObjectCommand({
       Bucket: B2_BUCKET_NAME,
       Key: file,
+      ResponseContentType: 'application/pdf',
+      ResponseContentDisposition: 'inline',
     });
 
     const signedUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
